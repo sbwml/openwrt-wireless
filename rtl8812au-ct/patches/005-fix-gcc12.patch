@@ -1,0 +1,80 @@
+--- a/core/rtw_br_ext.c
++++ b/core/rtw_br_ext.c
+@@ -115,7 +115,7 @@ static __inline__ int __nat25_add_pppoe_tag(struct sk_buff *skb, struct pppoe_ta
+ 	// have a room for new tag
+ 	memmove(((unsigned char *)ph->tag + data_len), (unsigned char *)ph->tag, ntohs(ph->length));
+ 	ph->length = htons(ntohs(ph->length) + data_len);
+-	memcpy((unsigned char *)ph->tag, tag, data_len);
++	memcpy((unsigned char *)ph->tag, tag, tag->tag_len);
+ 	return data_len;
+ }
+ 
+--- a/core/rtw_sta_mgt.c
++++ b/core/rtw_sta_mgt.c
+@@ -205,15 +205,14 @@ static void	_rtw_free_sta_recv_priv_lock(struct sta_recv_priv *psta_recvpriv)
+ void rtw_mfree_stainfo(struct sta_info *psta);
+ void rtw_mfree_stainfo(struct sta_info *psta)
+ {
+-	_func_enter_;
++       _func_enter_;
+ 
+-	if(&psta->lock != NULL)
+-		_rtw_spinlock_free(&psta->lock);
++       _rtw_spinlock_free(&psta->lock);
+ 
+-	_rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
+-	_rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
++       _rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
++       _rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
+ 
+-	_func_exit_;
++       _func_exit_;
+ }
+ 
+ 
+--- a/hal/OUTSRC/phydm_debug.c
++++ b/hal/OUTSRC/phydm_debug.c
+@@ -870,12 +870,9 @@ phydm_cmd_parser(
+ 	case PHYDM_RA:
+ 
+ 		for(i=0; i<5; i++) {
+-			if(input[i+1]) {
+-				PHYDM_SSCANF(input[i+1], DCMD_DECIMAL, &var1[i]);
+-
+-				PHYDM_SNPRINTF((output+used, out_len-used, "new SET, RA_var[%d]= (( %d ))\n", i , var1[i]));
+-				input_idx++;
+-			}
++			PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL, &var1[i]);
++			PHYDM_SNPRINTF((output+used, out_len-used, "new SET, RA_var[%d]= (( %d ))\n", i , var1[i]));
++			input_idx++;
+ 		}
+ 
+ 		if(input_idx>=1) {
+@@ -891,12 +888,9 @@ phydm_cmd_parser(
+ 	case PHYDM_PATHDIV:
+ 
+ 		for(i=0; i<5; i++) {
+-			if(input[i+1]) {
+-				PHYDM_SSCANF(input[i+1], DCMD_HEX, &var1[i]);
+-
+-				PHYDM_SNPRINTF((output+used, out_len-used, "new SET, PATHDIV_var[%d]= (( %d ))\n", i , var1[i]));
+-				input_idx++;
+-			}
++			PHYDM_SSCANF(input[i + 1], DCMD_HEX, &var1[i]);
++			PHYDM_SNPRINTF((output+used, out_len-used, "new SET, PATHDIV_var[%d]= (( %d ))\n", i , var1[i]));
++			input_idx++;
+ 		}
+ 
+ 		if(input_idx>=1) {
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -2185,8 +2185,7 @@ static int cfg80211_rtw_scan(struct wiphy *wiphy
+ 
+ #ifdef CONFIG_P2P
+ 	if( pwdinfo->driver_interface == DRIVER_CFG80211 ) {
+-		if(ssids->ssid != NULL
+-		   && _rtw_memcmp(ssids->ssid, "DIRECT-", 7)
++		if (_rtw_memcmp(ssids->ssid, "DIRECT-", 7)
+ 		   && rtw_get_p2p_ie((u8 *)request->ie, request->ie_len, NULL, NULL)
+ 		  ) {
+ 			if(rtw_p2p_chk_state(pwdinfo, P2P_STATE_NONE)) {
